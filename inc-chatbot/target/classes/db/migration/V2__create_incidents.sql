@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS incidents (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    incident_no VARCHAR(50) NOT NULL UNIQUE,
+    task_no VARCHAR(50),
+    app VARCHAR(100),
+    description TEXT,
+    status ENUM('OPEN','PENDING_SCRIPT','CLOSED','IN_PROGRESS','DRAFT') NOT NULL DEFAULT 'DRAFT',
+    last_comment TEXT,
+    comments TEXT,
+    rca TEXT,
+    plan_solution TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    is_approved BOOLEAN NOT NULL DEFAULT FALSE,
+    created_by VARCHAR(100),
+    INDEX idx_incidents_incident_no (incident_no),
+    INDEX idx_incidents_task_no (task_no),
+    INDEX idx_incidents_app (app),
+    INDEX idx_incidents_status (status),
+    INDEX idx_incidents_is_approved (is_approved),
+    FULLTEXT INDEX ft_incidents_search (description, comments, rca, plan_solution)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

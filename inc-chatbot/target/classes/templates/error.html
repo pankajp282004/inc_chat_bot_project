@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="'Error ' + ${errorCode} + ' - INC Chatbot'">Error - INC Chatbot</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .error-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 48px; max-width: 500px; text-align: center; }
+        .error-code { font-size: 80px; font-weight: 800; color: #ef4444; line-height: 1; }
+        .error-title { font-size: 24px; font-weight: 600; margin: 16px 0 8px; color: #f1f5f9; }
+        .error-msg { color: #94a3b8; line-height: 1.6; margin-bottom: 32px; }
+        .btn { display: inline-block; padding: 12px 28px; background: #3b82f6; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 500; transition: background 0.2s; }
+        .btn:hover { background: #2563eb; }
+    </style>
+</head>
+<body>
+    <div class="error-card">
+        <div class="error-code" th:text="${errorCode ?: '500'}">500</div>
+        <div class="error-title" th:text="${errorTitle ?: 'Error'}">Error</div>
+        <p class="error-msg" th:text="${errorMessage ?: 'An unexpected error occurred.'}">An unexpected error occurred.</p>
+        <a href="/chat" class="btn">← Back to Home</a>
+    </div>
+</body>
+</html>

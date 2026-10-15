@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>New Incident | INC Chatbot</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon"><i class="fas fa-robot"></i></div>
+            <div class="brand-text">
+                <span class="brand-name">INC Chatbot</span>
+                <span class="brand-sub">Knowledge Base</span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section-label">MAIN</div>
+            <a th:href="@{/chat}" class="nav-item"><i class="fas fa-comments"></i><span>Chat</span></a>
+            <a th:href="@{/search}" class="nav-item"><i class="fas fa-search"></i><span>Search</span></a>
+            <a th:href="@{/incidents}" class="nav-item"><i class="fas fa-list-alt"></i><span>All Incidents</span></a>
+            <div class="nav-section-label">ACTIONS</div>
+            <a th:href="@{/incidents/new}" class="nav-item active">
+                <i class="fas fa-plus-circle"></i><span>New Incident</span>
+            </a>
+            <div class="nav-section-label" sec:authorize="hasRole('ADMIN')">ADMIN</div>
+            <a th:href="@{/admin}" class="nav-item" sec:authorize="hasRole('ADMIN')">
+                <i class="fas fa-cog"></i><span>Admin Panel</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar"><i class="fas fa-user-circle"></i></div>
+                <div class="user-details">
+                    <span class="user-name" sec:authentication="name">User</span>
+                </div>
+            </div>
+            <form th:action="@{/logout}" method="post" style="margin:0">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" class="logout-btn" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
+            </form>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <h1><i class="fas fa-plus-circle"></i> New Incident</h1>
+            <a th:href="@{/incidents}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+
+        <!-- Error message -->
+        <div class="alert alert-danger" th:if="${errorMsg}" th:text="${errorMsg}"></div>
+
+        <div class="form-card">
+            <form th:action="@{/incidents/save}" method="post" th:object="${incident}" enctype="multipart/form-data">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                <div class="form-section-title">
+                    <i class="fas fa-info-circle"></i> Incident Information
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">Incident Number</label>
+                        <input type="text" th:field="*{incidentNo}" class="form-control"
+                               placeholder="e.g. INC0027812747" required
+                               th:classappend="${#fields.hasErrors('incidentNo')} ? 'is-invalid' : ''"/>
+                        <div class="field-error" th:if="${#fields.hasErrors('incidentNo')}"
+                             th:errors="*{incidentNo}">Error</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Task Number</label>
+                        <input type="text" th:field="*{taskNo}" class="form-control" placeholder="e.g. TASK00112233"/>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Application</label>
+                        <select th:field="*{app}" class="form-control">
+                            <option value="">-- Select Application --</option>
+                            <option th:each="app : ${apps}" th:value="${app}" th:text="${app}">APP</option>
+                            <option value="SPEI">SPEI</option>
+                            <option value="SPID">SPID</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select th:field="*{status}" class="form-control">
+                            <option value="DRAFT">Draft</option>
+                            <option value="OPEN">Open</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="PENDING_SCRIPT">Pending Script</option>
+                            <option value="CLOSED">Closed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea th:field="*{description}" class="form-control" rows="4"
+                              placeholder="Describe the incident - what happened, when, who was affected..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Last Comment</label>
+                    <textarea th:field="*{lastComment}" class="form-control" rows="2"
+                              placeholder="Most recent comment or status update..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Comments / History</label>
+                    <textarea th:field="*{comments}" class="form-control" rows="3"
+                              placeholder="Full comments history or timeline..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Root Cause Analysis (RCA)</label>
+                    <textarea th:field="*{rca}" class="form-control" rows="3"
+                              placeholder="What was the root cause of this incident?"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Plan / Solution Summary</label>
+                    <textarea th:field="*{planSolution}" class="form-control" rows="3"
+                              placeholder="High-level solution plan or workaround..."></textarea>
+                </div>
+
+                <div class="form-section-title">
+                    <i class="fas fa-wrench"></i> Solution
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex:0 0 200px">
+                        <label class="form-label">Solution Type</label>
+                        <select name="solutionType" class="form-control">
+                            <option value="STEPS">Step-by-Step Guide</option>
+                            <option value="SQL">SQL Script</option>
+                            <option value="DOC">Documentation</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Solution Details</label>
+                    <textarea name="solutionText" class="form-control code-area" rows="8"
+                              placeholder="Enter detailed solution steps, SQL scripts, or documentation...&#10;&#10;e.g.&#10;1. Run cleanup query&#10;2. Restart service&#10;3. Verify fix"></textarea>
+                </div>
+
+                <div class="form-section-title">
+                    <i class="fas fa-paperclip"></i> Attachments
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Upload Files</label>
+                    <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-cloud-upload-alt fa-2x" style="color:#aaa"></i>
+                        <p>Click or drag files here to upload</p>
+                        <small>Supports: PDF, DOCX, XLSX, TXT, SQL, LOG (max 50MB each)</small>
+                    </div>
+                    <input type="file" id="fileInput" name="attachments" multiple style="display:none"
+                           onchange="updateFileList(this)"/>
+                    <div id="fileList" class="file-list"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save"></i> Save & Index Incident
+                    </button>
+                    <a th:href="@{/incidents}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+
+<script th:src="@{/js/chat.js}"></script>
+<script>
+function updateFileList(input) {
+    const list = document.getElementById('fileList');
+    list.innerHTML = '';
+    Array.from(input.files).forEach(f => {
+        const item = document.createElement('div');
+        item.className = 'file-item';
+        item.innerHTML = `<i class="fas fa-file"></i> ${f.name} <span class="file-size">(${(f.size/1024).toFixed(1)} KB)</span>`;
+        list.appendChild(item);
+    });
+}
+</script>
+</body>
+</html>

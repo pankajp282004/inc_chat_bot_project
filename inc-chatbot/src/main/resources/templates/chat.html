@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>INC Chatbot - Incident Knowledge Base</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+<div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon"><i class="fas fa-robot"></i></div>
+            <div class="brand-text">
+                <span class="brand-name">INC Chatbot</span>
+                <span class="brand-sub">Knowledge Base</span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section-label">MAIN</div>
+            <a th:href="@{/chat}" class="nav-item active">
+                <i class="fas fa-comments"></i><span>Chat</span>
+            </a>
+            <a th:href="@{/search}" class="nav-item">
+                <i class="fas fa-search"></i><span>Search</span>
+            </a>
+            <a th:href="@{/incidents}" class="nav-item">
+                <i class="fas fa-list-alt"></i><span>All Incidents</span>
+            </a>
+            <div class="nav-section-label" sec:authorize="hasAnyRole('CONTRIBUTOR','APPROVER','ADMIN')">ACTIONS</div>
+            <a th:href="@{/incidents/new}" class="nav-item" sec:authorize="hasAnyRole('CONTRIBUTOR','APPROVER','ADMIN')">
+                <i class="fas fa-plus-circle"></i><span>New Incident</span>
+            </a>
+            <div class="nav-section-label" sec:authorize="hasRole('ADMIN')">ADMIN</div>
+            <a th:href="@{/admin}" class="nav-item" sec:authorize="hasRole('ADMIN')">
+                <i class="fas fa-cog"></i><span>Admin Panel</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar"><i class="fas fa-user-circle"></i></div>
+                <div class="user-details">
+                    <span class="user-name" sec:authentication="name">User</span>
+                    <span class="user-role">
+                        <span sec:authorize="hasRole('ADMIN')">Admin</span>
+                        <span sec:authorize="hasRole('APPROVER')">Approver</span>
+                        <span sec:authorize="hasRole('CONTRIBUTOR')">Contributor</span>
+                        <span sec:authorize="hasRole('VIEWER')">Viewer</span>
+                    </span>
+                </div>
+            </div>
+            <form th:action="@{/logout}" method="post" style="margin:0">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" class="logout-btn" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-pill">
+                <i class="fas fa-database"></i>
+                <span th:text="${totalIncidents} + ' incidents'">0 incidents</span>
+            </div>
+            <div class="stat-pill">
+                <i class="fas fa-check-circle" style="color:#4CAF50"></i>
+                <span th:text="${approvedIncidents} + ' approved'">0 approved</span>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-container">
+            <div class="chat-header">
+                <div class="bot-avatar-lg"><i class="fas fa-robot"></i></div>
+                <div>
+                    <h2>INC Knowledge Assistant</h2>
+                    <p>Search incidents by INC number, task number, application, error text, or description</p>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <!-- Welcome message -->
+                <div class="message bot-message">
+                    <div class="message-avatar"><i class="fas fa-robot"></i></div>
+                    <div class="message-content">
+                        <div class="message-bubble">
+                            <p>👋 Hello! I'm the INC Knowledge Assistant. I can help you find past incidents and their solutions.</p>
+                            <p style="margin-top:8px">Try searching for:</p>
+                            <ul style="margin-top:4px; padding-left:18px">
+                                <li>An INC number: <code>INC0027812747</code></li>
+                                <li>Error text: <code>payment type 16</code></li>
+                                <li>Application: <code>SPEI</code></li>
+                                <li>Error: <code>SPID authorization failure</code></li>
+                            </ul>
+                        </div>
+                        <span class="message-time">Now</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="chat-input-area">
+                <div class="app-filter-bar">
+                    <label>Filter by App:</label>
+                    <select id="appFilter" class="app-select">
+                        <option value="">All Applications</option>
+                        <option th:each="app : ${apps}" th:value="${app}" th:text="${app}">APP</option>
+                    </select>
+                </div>
+                <div class="chat-input-row">
+                    <input type="text" id="chatInput" class="chat-input"
+                           placeholder="Ask about an incident... e.g. payment type 16 issue"
+                           autocomplete="off"/>
+                    <button class="chat-send-btn" id="sendBtn" onclick="sendChatMessage()">
+                        <i class="fas fa-search"></i>
+                        <span>Search</span>
+                    </button>
+                </div>
+                <div class="quick-actions">
+                    <span class="quick-label">Quick:</span>
+                    <button class="quick-btn" onclick="setQuery('SPEI timeout')">SPEI timeout</button>
+                    <button class="quick-btn" onclick="setQuery('SPID authorization')">SPID auth</button>
+                    <button class="quick-btn" onclick="setQuery('duplicate transaction')">Duplicate txn</button>
+                    <button class="quick-btn" onclick="setQuery('payment failed')">Payment failed</button>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Add New Incident Modal -->
+<div class="modal-overlay" id="newIncidentModal" style="display:none">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus-circle"></i> Add New Incident</h3>
+            <button onclick="closeModal()" class="modal-close">&times;</button>
+        </div>
+        <p>No matching incident found. Would you like to document this as a new incident?</p>
+        <div class="modal-actions">
+            <a th:href="@{/incidents/new}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create New Incident
+            </a>
+            <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/js/chat.js}"></script>
+<script th:inline="javascript">
+    function setQuery(text) {
+        document.getElementById('chatInput').value = text;
+        sendChatMessage();
+    }
+    function closeModal() {
+        document.getElementById('newIncidentModal').style.display = 'none';
+    }
+    document.getElementById('chatInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') sendChatMessage();
+    });
+</script>
+</body>
+</html>

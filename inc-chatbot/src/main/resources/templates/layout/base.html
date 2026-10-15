@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${pageTitle != null ? pageTitle + ' | INC Chatbot' : 'INC Chatbot'}">INC Chatbot</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="brand-text">
+                <span class="brand-name">INC Chatbot</span>
+                <span class="brand-sub">Incident Knowledge Base</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-label">MAIN</div>
+            <a th:href="@{/chat}" class="nav-item" th:classappend="${activeMenu == 'chat' ? 'active' : ''}">
+                <i class="fas fa-comments"></i>
+                <span>Chat</span>
+            </a>
+            <a th:href="@{/search}" class="nav-item" th:classappend="${activeMenu == 'search' ? 'active' : ''}">
+                <i class="fas fa-search"></i>
+                <span>Search</span>
+            </a>
+            <a th:href="@{/incidents}" class="nav-item" th:classappend="${activeMenu == 'incidents' ? 'active' : ''}">
+                <i class="fas fa-list-alt"></i>
+                <span>All Incidents</span>
+            </a>
+
+            <div class="nav-section-label" sec:authorize="hasAnyRole('CONTRIBUTOR','APPROVER','ADMIN')">ACTIONS</div>
+            <a th:href="@{/incidents/new}" class="nav-item" sec:authorize="hasAnyRole('CONTRIBUTOR','APPROVER','ADMIN')"
+               th:classappend="${activeMenu == 'new' ? 'active' : ''}">
+                <i class="fas fa-plus-circle"></i>
+                <span>New Incident</span>
+            </a>
+
+            <div class="nav-section-label" sec:authorize="hasRole('ADMIN')">ADMIN</div>
+            <a th:href="@{/admin}" class="nav-item" sec:authorize="hasRole('ADMIN')"
+               th:classappend="${activeMenu == 'admin' ? 'active' : ''}">
+                <i class="fas fa-cog"></i>
+                <span>Admin Panel</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="user-details">
+                    <span class="user-name" sec:authentication="name">User</span>
+                    <span class="user-role" sec:authorize="hasRole('ADMIN')">Admin</span>
+                    <span class="user-role" sec:authorize="hasRole('APPROVER')">Approver</span>
+                    <span class="user-role" sec:authorize="hasRole('CONTRIBUTOR')">Contributor</span>
+                    <span class="user-role" sec:authorize="hasRole('VIEWER')">Viewer</span>
+                </div>
+            </div>
+            <a th:href="@{/logout}" class="logout-btn" onclick="return confirm('Logout?')">
+                <i class="fas fa-sign-out-alt"></i>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div th:replace="${content}">Content here</div>
+    </main>
+</div>
+
+<script th:src="@{/js/chat.js}"></script>
+</body>
+</html>
