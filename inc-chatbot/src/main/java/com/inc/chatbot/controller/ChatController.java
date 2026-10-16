@@ -16,6 +16,11 @@ public class ChatController {
         this.incidentService = incidentService;
     }
 
+    @GetMapping("/login")
+    public String loginPage() {
+        return "login";
+    }
+
     @GetMapping("/")
     public String root() {
         return "redirect:/chat";

@@ -62,7 +62,7 @@ public class IncidentController {
 
     @GetMapping("/{id}")
     public String viewIncident(@PathVariable Long id, Model model) {
-        Incident incident = incidentService.getById(id)
+        Incident incident = incidentService.getByIdWithDetails(id)
                 .orElseThrow(() -> new NoSuchElementException("Incident not found: " + id));
 
         List<Solution> solutions = solutionRepository.findByIncidentIdAndIsActive(id, true);

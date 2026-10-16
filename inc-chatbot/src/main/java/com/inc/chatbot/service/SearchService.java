@@ -111,19 +111,25 @@ public class SearchService {
         if (StringUtils.hasText(app)) {
             incidents = incidentRepository.searchByKeywordAndApp(query, app);
         } else {
-            String[] tokens = query.split("\\s+");
-            Set<Long> seenIds = new HashSet<>();
-            List<Incident> merged = new ArrayList<>();
+            // First try full phrase search
+            incidents = incidentRepository.searchByKeyword(query);
 
-            for (String token : tokens) {
-                if (token.length() < 2) continue;
-                incidentRepository.searchByKeyword(token).forEach(inc -> {
-                    if (seenIds.add(inc.getId())) {
-                        merged.add(inc);
-                    }
-                });
+            // If no results, fall back to individual token search
+            if (incidents.isEmpty()) {
+                String[] tokens = query.split("\\s+");
+                Set<Long> seenIds = new HashSet<>();
+                List<Incident> merged = new ArrayList<>();
+
+                for (String token : tokens) {
+                    if (token.length() < 2) continue;
+                    incidentRepository.searchByKeyword(token).forEach(inc -> {
+                        if (seenIds.add(inc.getId())) {
+                            merged.add(inc);
+                        }
+                    });
+                }
+                incidents = merged;
             }
-            incidents = merged;
         }
 
         return incidents.stream()
@@ -131,6 +137,7 @@ public class SearchService {
                     int score = calculateKeywordScore(inc, query);
                     return mapToResult(inc, "KEYWORD", score);
                 })
+                .filter(r -> r.getMatchScore() >= 10) // Filter low-relevance results
                 .collect(Collectors.toList());
     }
 
@@ -138,18 +145,47 @@ public class SearchService {
         String lowerQuery = query.toLowerCase();
         String[] tokens = lowerQuery.split("\\s+");
         int score = 0;
+        int matchedTokens = 0;
+        int totalTokens = 0;
+
+        // Bonus for full phrase match
+        String allText = buildSearchableText(incident).toLowerCase();
+        if (allText.contains(lowerQuery)) {
+            score += 50; // Big bonus for exact phrase match
+        }
 
         for (String token : tokens) {
             if (token.length() < 2) continue;
-            if (incident.getDescription() != null && incident.getDescription().toLowerCase().contains(token)) score += 20;
-            if (incident.getRca() != null && incident.getRca().toLowerCase().contains(token)) score += 15;
-            if (incident.getPlanSolution() != null && incident.getPlanSolution().toLowerCase().contains(token)) score += 15;
-            if (incident.getComments() != null && incident.getComments().toLowerCase().contains(token)) score += 10;
-            if (incident.getApp() != null && incident.getApp().toLowerCase().contains(token)) score += 5;
-            if (incident.getLastComment() != null && incident.getLastComment().toLowerCase().contains(token)) score += 5;
+            totalTokens++;
+            boolean tokenMatched = false;
+
+            if (incident.getDescription() != null && incident.getDescription().toLowerCase().contains(token)) { score += 20; tokenMatched = true; }
+            if (incident.getRca() != null && incident.getRca().toLowerCase().contains(token)) { score += 15; tokenMatched = true; }
+            if (incident.getPlanSolution() != null && incident.getPlanSolution().toLowerCase().contains(token)) { score += 15; tokenMatched = true; }
+            if (incident.getComments() != null && incident.getComments().toLowerCase().contains(token)) { score += 10; tokenMatched = true; }
+            if (incident.getApp() != null && incident.getApp().toLowerCase().contains(token)) { score += 5; tokenMatched = true; }
+            if (incident.getLastComment() != null && incident.getLastComment().toLowerCase().contains(token)) { score += 5; tokenMatched = true; }
+
+            if (tokenMatched) matchedTokens++;
+        }
+
+        // Penalize if less than half the query tokens matched
+        if (totalTokens > 1 && matchedTokens < (totalTokens + 1) / 2) {
+            score = score / 3; // Heavy penalty
         }
 
         return Math.min(score, 99);
+    }
+
+    private String buildSearchableText(Incident incident) {
+        StringBuilder sb = new StringBuilder();
+        if (incident.getDescription() != null) sb.append(incident.getDescription()).append(" ");
+        if (incident.getRca() != null) sb.append(incident.getRca()).append(" ");
+        if (incident.getPlanSolution() != null) sb.append(incident.getPlanSolution()).append(" ");
+        if (incident.getComments() != null) sb.append(incident.getComments()).append(" ");
+        if (incident.getLastComment() != null) sb.append(incident.getLastComment()).append(" ");
+        if (incident.getApp() != null) sb.append(incident.getApp());
+        return sb.toString();
     }
 
     private SearchResponse.IncidentSearchResult mapToResult(Incident incident, String matchReason, int matchScore) {

@@ -48,6 +48,17 @@ public class IncidentService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<Incident> getByIdWithDetails(Long id) {
+        Optional<Incident> opt = incidentRepository.findById(id);
+        opt.ifPresent(inc -> {
+            // Force-initialize lazy collections within transaction
+            inc.getAttachments().size();
+            inc.getSolutions().size();
+        });
+        return opt;
+    }
+
+    @Transactional(readOnly = true)
     public Optional<Incident> getByIncidentNo(String incidentNo) {
         return incidentRepository.findByIncidentNo(incidentNo);
     }

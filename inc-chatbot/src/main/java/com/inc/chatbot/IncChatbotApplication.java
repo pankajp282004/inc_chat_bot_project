@@ -10,5 +10,6 @@ public class IncChatbotApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(IncChatbotApplication.class, args);
+        System.out.println("Application Started Successfully..");
     }
 }
